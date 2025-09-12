@@ -1,63 +1,33 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
+// 导入必要的包
+import 'package:flutter/material.dart'; // Flutter材料设计库
+import 'raffle_demo.dart'; // 抽奖演示页面
 
-import 'package:flutter/services.dart';
-import 'package:raffle/raffle.dart';
-
+/// 应用程序入口点
+/// 初始化并运行MyApp组件
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+/// 应用程序根组件
+/// 设置应用程序的主题和初始路由
+class MyApp extends StatelessWidget {
+  /// 构造函数
+  /// @param key 组件键
   const MyApp({super.key});
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _rafflePlugin = Raffle();
-
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _rafflePlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
-
+  /// 构建应用程序界面
+  /// @param context 构建上下文
+  /// @return 构建的Widget树
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
-        ),
+      title: 'Raffle Demo', // 应用程序标题
+      theme: ThemeData(
+        primarySwatch: Colors.blue, // 主题颜色
+        visualDensity: VisualDensity.adaptivePlatformDensity, // 视觉密度
       ),
+      home: const RaffleDemoPage(), // 首页为抽奖演示页面
+      debugShowCheckedModeBanner: false, // 隐藏调试标签
     );
   }
 }

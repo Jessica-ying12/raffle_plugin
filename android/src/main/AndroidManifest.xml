@@ -1,3 +1,11 @@
+<!-- 
+  Raffle插件的Android清单文件
+  定义了插件所需的权限和配置
+ -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.giselle.raffle">
+  
+  <!-- 震动权限：允许应用程序控制设备的振动器，用于抽奖时的触觉反馈 -->
+  <uses-permission android:name="android.permission.VIBRATE" />
+  
 </manifest>

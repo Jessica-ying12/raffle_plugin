@@ -1,7 +1,9 @@
 name: raffle
-description: "A new Flutter plugin project."
+description: "一个功能丰富的Flutter抽奖插件，提供多种抽奖组件和动画效果。"
 version: 0.0.1
-homepage:
+homepage: https://github.com/giselle/raffle
+repository: https://github.com/giselle/raffle.git
+issue_tracker: https://github.com/giselle/raffle/issues
 
 environment:
   sdk: ^3.7.0
