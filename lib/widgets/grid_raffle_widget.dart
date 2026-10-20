@@ -96,24 +96,6 @@ class _GridRaffleWidgetState extends State<GridRaffleWidget>
     // 监听抽奖结果
     _controller.resultStream.listen((result) {
       widget.onResult?.call(result);
-      // 弹窗展示结果，确保与停止位置一致
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) {
-            return AlertDialog(
-              title: const Text('抽奖结果'),
-              content: Text('恭喜获得：${result.prize.name}'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('确定'),
-                ),
-              ],
-            );
-          },
-        );
-      }
     });
   }
 
