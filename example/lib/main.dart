@@ -1,10 +1,19 @@
 // 导入必要的包
 import 'package:flutter/material.dart'; // Flutter材料设计库
+import 'package:flutter/services.dart'; // 系统服务
 import 'raffle_demo.dart'; // 抽奖演示页面
 
 /// 应用程序入口点
 /// 初始化并运行MyApp组件
 void main() {
+  // 设置系统UI样式
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
+
   runApp(const MyApp());
 }
 
@@ -28,6 +37,15 @@ class MyApp extends StatelessWidget {
       ),
       home: const RaffleDemoPage(), // 首页为抽奖演示页面
       debugShowCheckedModeBanner: false, // 隐藏调试标签
+      // 渲染性能优化
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaleFactor: 1.0, // 固定文字缩放比例
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }
