@@ -9,37 +9,37 @@ import '../controllers/slot_raffle_controller.dart';
 class SlotRaffleWidget extends StatefulWidget {
   /// 抽奖项目列表
   final List<RaffleItem> items;
-
+  
   /// 抽奖配置
   final RaffleConfig config;
-
+  
   /// 抽奖结果回调
   final Function(RaffleResult)? onResult;
-
+  
   /// 抽奖开始回调
   final VoidCallback? onStart;
-
+  
   /// 抽奖停止回调
   final VoidCallback? onStop;
-
+  
   /// 滚轮数量
   final int reelCount;
-
+  
   /// 组件宽度
   final double width;
-
+  
   /// 组件高度
   final double height;
-
+  
   /// 项目高度
   final double itemHeight;
-
+  
   /// 可见项目数量
   final int visibleItemCount;
-
+  
   /// 是否显示开始按钮
   final bool showStartButton;
-
+  
   /// 开始按钮文本
   final String startButtonText;
 
@@ -72,7 +72,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
   @override
   void initState() {
     super.initState();
-
+    
     _controller = SlotRaffleController(
       config: widget.config,
       items: widget.items,
@@ -80,13 +80,13 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       itemHeight: widget.itemHeight,
       visibleItemCount: widget.visibleItemCount,
     );
-
+    
     // 初始化动画控制器
     _controller.initializeAnimations(this);
-
+    
     // 初始化当前索引
     _currentIndices = List.filled(widget.reelCount, 0);
-
+    
     // 监听滚轮状态变化
     _controller.reelStateStream.listen((indices) {
       if (mounted) {
@@ -95,14 +95,14 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
         });
       }
     });
-
+    
     // 监听抽奖状态变化
     _controller.stateStream.listen((state) {
       if (mounted) {
         setState(() {
           _isRaffling = state == RaffleState.running;
         });
-
+        
         if (state == RaffleState.running) {
           widget.onStart?.call();
         } else if (state == RaffleState.stopped) {
@@ -110,7 +110,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
         }
       }
     });
-
+    
     // 监听抽奖结果
     _controller.resultStream.listen((result) {
       widget.onResult?.call(result);
@@ -126,14 +126,14 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
   /// 开始抽奖
   Future<void> _startRaffle() async {
     if (!_controller.canStart) return;
-
+    
     try {
       await _controller.startRaffle();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('抽奖失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('抽奖失败: $e')),
+        );
       }
     }
   }
@@ -165,7 +165,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
           ),
           child: _buildSlotMachine(),
         ),
-
+        
         // 开始按钮
         if (widget.showStartButton) ...[
           SizedBox(height: widget.config.margin.top),
@@ -174,7 +174,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       ],
     );
   }
-
+  
   /// 构建老虎机
   Widget _buildSlotMachine() {
     return Padding(
@@ -186,9 +186,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
               margin: EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(
-                  widget.config.borderRadius / 2,
-                ),
+                borderRadius: BorderRadius.circular(widget.config.borderRadius / 2),
                 border: Border.all(
                   color: widget.config.borderColor.withOpacity(0.3),
                   width: 1,
@@ -201,7 +199,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       ),
     );
   }
-
+  
   /// 构建单个滚轮
   Widget _buildReel(int reelIndex) {
     return ClipRRect(
@@ -213,7 +211,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
           children: [
             // 滚动列表
             _buildScrollingList(reelIndex),
-
+            
             // 中心高亮框
             _buildCenterHighlight(),
           ],
@@ -221,30 +219,24 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       ),
     );
   }
-
+  
   /// 构建滚动列表
   Widget _buildScrollingList(int reelIndex) {
     return StreamBuilder<RaffleState>(
       stream: _controller.stateStream,
       builder: (context, snapshot) {
         final scrollOffset = _controller.getScrollOffset(reelIndex);
-
+        
         return ClipRect(
           child: Transform.translate(
             offset: Offset(0, -scrollOffset),
             child: SizedBox(
               width: double.infinity,
-              height:
-                  widget.itemHeight *
-                  widget.visibleItemCount *
-                  0.95, // 稍微减小高度以避免溢出
+              height: widget.itemHeight * widget.visibleItemCount * 0.95, // 稍微减小高度以避免溢出
               child: Column(
                 mainAxisSize: MainAxisSize.min, // 改为min以适应内容大小
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children:
-                    _buildReelItems(
-                      reelIndex,
-                    ).take(widget.visibleItemCount).toList(), // 限制子项数量
+                children: _buildReelItems(reelIndex).take(widget.visibleItemCount).toList(), // 限制子项数量
               ),
             ),
           ),
@@ -252,30 +244,29 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       },
     );
   }
-
+  
   /// 构建滚轮项目列表
   List<Widget> _buildReelItems(int reelIndex) {
     final items = <Widget>[];
     final currentIndex = _currentIndices[reelIndex];
-
+    
     // 为了实现无缝滚动，只需要在前后各添加可见项目数量的项目
-    // final extraItems = widget.visibleItemCount; // 未使用，移除
     final totalItems = widget.items.length;
-
+    
     // 计算需要显示的项目范围，避免生成过多项目
     final visibleCount = widget.visibleItemCount; // 调整为仅显示可见数量的项目
-
+    
     for (int i = 0; i < visibleCount; i++) {
       // 计算实际索引，确保在items范围内循环
       final itemIndex = (currentIndex + i) % totalItems;
       final item = widget.items[itemIndex];
-
+      
       items.add(_buildReelItem(item, itemIndex == currentIndex));
     }
-
+    
     return items;
   }
-
+  
   /// 构建单个滚轮项目
   Widget _buildReelItem(RaffleItem item, bool isCurrent) {
     return Container(
@@ -283,10 +274,9 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       width: double.infinity,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color:
-            isCurrent && !_isRaffling
-                ? widget.config.highlightColor.withOpacity(0.2)
-                : Colors.transparent,
+        color: isCurrent && !_isRaffling 
+            ? widget.config.highlightColor.withOpacity(0.2)
+            : Colors.transparent,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -312,7 +302,7 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
                 ),
               ),
             ),
-
+          
           // 奖品名称
           SizedBox(
             height: widget.itemHeight * 0.15, // 进一步减少高度，占据15%的空间
@@ -334,12 +324,12 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       ),
     );
   }
-
+  
   /// 构建中心高亮框
   Widget _buildCenterHighlight() {
     // 计算中心位置，确保高亮框在正中间
     final centerTop = (widget.visibleItemCount - 1) * widget.itemHeight / 2;
-
+    
     return Positioned(
       top: centerTop,
       left: 0,
@@ -347,13 +337,16 @@ class _SlotRaffleWidgetState extends State<SlotRaffleWidget>
       height: widget.itemHeight,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: widget.config.highlightColor, width: 2),
+          border: Border.all(
+            color: widget.config.highlightColor,
+            width: 2,
+          ),
           borderRadius: BorderRadius.circular(4),
         ),
       ),
     );
   }
-
+  
   /// 构建开始按钮
   Widget _buildStartButton() {
     return SizedBox(
