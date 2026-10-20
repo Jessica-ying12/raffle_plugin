@@ -10,28 +10,28 @@ import '../controllers/wheel_raffle_controller.dart';
 class WheelRaffleWidget extends StatefulWidget {
   /// 抽奖项目列表
   final List<RaffleItem> items;
-  
+
   /// 抽奖配置
   final RaffleConfig config;
-  
+
   /// 抽奖结果回调
   final Function(RaffleResult)? onResult;
-  
+
   /// 抽奖开始回调
   final VoidCallback? onStart;
-  
+
   /// 抽奖停止回调
   final VoidCallback? onStop;
-  
+
   /// 转盘尺寸
   final double size;
-  
+
   /// 是否显示开始按钮
   final bool showStartButton;
-  
+
   /// 开始按钮文本
   final String startButtonText;
-  
+
   /// 是否启用手势控制
   final bool enableGesture;
 
@@ -57,7 +57,7 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
   late WheelRaffleController _controller;
   double _currentRotation = 0.0;
   bool _isRaffling = false;
-  
+
   // 手势相关
   double _lastPanAngle = 0.0;
   bool _isDragging = false;
@@ -65,16 +65,16 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = WheelRaffleController(
       config: widget.config,
       items: widget.items,
       onRaffleComplete: widget.onResult,
     );
-    
+
     // 初始化动画控制器
     _controller.initializeAnimation(this);
-    
+
     // 监听旋转角度变化
     _controller.rotationStream.listen((rotation) {
       if (mounted) {
@@ -83,14 +83,14 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
         });
       }
     });
-    
+
     // 监听抽奖状态变化
     _controller.stateStream.listen((state) {
       if (mounted) {
         setState(() {
           _isRaffling = state == RaffleState.running;
         });
-        
+
         if (state == RaffleState.running) {
           widget.onStart?.call();
         } else if (state == RaffleState.stopped) {
@@ -98,11 +98,28 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
         }
       }
     });
-    
-    // 注意：已通过onRaffleComplete传递结果回调，不需要再次监听resultStream
-    // 如果有其他需要处理的逻辑，可以在这里添加
+
+    // 监听抽奖结果并弹出对话框，确保与转盘停止位置一致
     _controller.resultStream.listen((result) {
-      // 结果已通过onRaffleComplete回调处理
+      widget.onResult?.call(result);
+      // 弹窗展示结果，确保与转盘停止位置一致
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) {
+            return AlertDialog(
+              title: const Text('抽奖结果'),
+              content: Text('恭喜获得：${result.prize.name}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+      }
     });
   }
 
@@ -115,53 +132,54 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
   /// 开始抽奖
   Future<void> _startRaffle() async {
     if (!_controller.canStart) return;
-    
+
     try {
       await _controller.startRaffle();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('抽奖失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('抽奖失败: $e')));
       }
     }
   }
-  
+
   /// 处理手势开始
   void _onPanStart(DragStartDetails details) {
     if (!widget.enableGesture || _isRaffling) return;
-    
+
     _isDragging = true;
     final center = Offset(widget.size / 2, widget.size / 2);
     final offset = details.localPosition - center;
     _lastPanAngle = atan2(offset.dy, offset.dx);
   }
-  
+
   /// 处理手势更新
   void _onPanUpdate(DragUpdateDetails details) {
     if (!widget.enableGesture || _isRaffling || !_isDragging) return;
-    
+
     final center = Offset(widget.size / 2, widget.size / 2);
     final offset = details.localPosition - center;
     final currentAngle = atan2(offset.dy, offset.dx);
-    
+
     // 计算拖动距离，只有超过一定阈值才更新角度，避免微小抖动
     final distance = offset.distance;
-    if (distance > 20) { // 设置最小拖动距离阈值
+    if (distance > 20) {
+      // 设置最小拖动距离阈值
       double deltaAngle = currentAngle - _lastPanAngle;
-      
+
       // 处理角度跨越边界的情况
       if (deltaAngle > pi) {
         deltaAngle -= 2 * pi;
       } else if (deltaAngle < -pi) {
         deltaAngle += 2 * pi;
       }
-      
+
       _controller.addRotation(deltaAngle);
       _lastPanAngle = currentAngle;
     }
   }
-  
+
   /// 处理手势结束
   void _onPanEnd(DragEndDetails details) {
     _isDragging = false;
@@ -181,16 +199,16 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
             children: [
               // 转盘背景
               _buildWheelBackground(),
-              
+
               // 转盘内容
               _buildWheel(),
-              
+
               // 指针
               _buildPointer(),
             ],
           ),
         ),
-        
+
         // 开始按钮
         if (widget.showStartButton) ...[
           SizedBox(height: widget.config.margin.top),
@@ -199,7 +217,7 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
       ],
     );
   }
-  
+
   /// 构建转盘背景
   Widget _buildWheelBackground() {
     return Container(
@@ -222,7 +240,7 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
       ),
     );
   }
-  
+
   /// 构建转盘
   Widget _buildWheel() {
     return GestureDetector(
@@ -233,15 +251,12 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
         angle: _currentRotation,
         child: CustomPaint(
           size: Size(widget.size, widget.size),
-          painter: WheelPainter(
-            items: widget.items,
-            config: widget.config,
-          ),
+          painter: WheelPainter(items: widget.items, config: widget.config),
         ),
       ),
     );
   }
-  
+
   /// 构建指针
   Widget _buildPointer() {
     return Positioned(
@@ -266,7 +281,7 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
       ),
     );
   }
-  
+
   /// 构建开始按钮
   Widget _buildStartButton() {
     return SizedBox(
@@ -298,18 +313,15 @@ class _WheelRaffleWidgetState extends State<WheelRaffleWidget>
 class WheelPainter extends CustomPainter {
   final List<RaffleItem> items;
   final RaffleConfig config;
-  
-  WheelPainter({
-    required this.items,
-    required this.config,
-  });
+
+  WheelPainter({required this.items, required this.config});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - config.borderWidth;
     final sectorAngle = 2 * pi / items.length;
-    
+
     // 预定义颜色列表
     final colors = [
       Colors.red.shade300,
@@ -321,16 +333,17 @@ class WheelPainter extends CustomPainter {
       Colors.pink.shade300,
       Colors.indigo.shade300,
     ];
-    
+
     for (int i = 0; i < items.length; i++) {
       final startAngle = i * sectorAngle - pi / 2; // 从顶部开始
       final sweepAngle = sectorAngle;
-      
+
       // 绘制扇形
-      final paint = Paint()
-        ..color = colors[i % colors.length]
-        ..style = PaintingStyle.fill;
-      
+      final paint =
+          Paint()
+            ..color = colors[i % colors.length]
+            ..style = PaintingStyle.fill;
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -338,13 +351,14 @@ class WheelPainter extends CustomPainter {
         true,
         paint,
       );
-      
+
       // 绘制边框
-      final borderPaint = Paint()
-        ..color = config.borderColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-      
+      final borderPaint =
+          Paint()
+            ..color = config.borderColor
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1;
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -352,7 +366,7 @@ class WheelPainter extends CustomPainter {
         true,
         borderPaint,
       );
-      
+
       // 绘制文字
       _drawText(
         canvas,
@@ -363,7 +377,7 @@ class WheelPainter extends CustomPainter {
       );
     }
   }
-  
+
   /// 绘制文字
   void _drawText(
     Canvas canvas,
@@ -383,14 +397,14 @@ class WheelPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     );
-    
+
     textPainter.layout();
-    
+
     final textOffset = Offset(
       center.dx + cos(angle) * radius - textPainter.width / 2,
       center.dy + sin(angle) * radius - textPainter.height / 2,
     );
-    
+
     textPainter.paint(canvas, textOffset);
   }
 
