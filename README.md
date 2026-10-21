@@ -33,7 +33,9 @@
 
 ```yaml
 dependencies:
-  raffle: ^1.0.0
+  raffle:
+    git:
+      url: https://github.com/Jessica-ying12/raffle_plugin.git
 ```
 
 然后运行：
